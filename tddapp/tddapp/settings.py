@@ -1,4 +1,4 @@
-# Django settings for login project.
+# Django settings for tddapp project.
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -83,7 +83,7 @@ STATICFILES_FINDERS = (
 )
 
 # Make this unique, and don't share it with anybody.
-SECRET_KEY = 'kd(4=p!tfy^adon=j$is6&2p09mxm$bbs*u1yobdv_)#5%^r5+'
+SECRET_KEY = 'kz05f*&6oe=#a7tp^8&+fq#jy@huwgypt%#+6k46_04#hv$u!%'
 
 # List of callables that know how to import templates from various sources.
 TEMPLATE_LOADERS = (
@@ -102,10 +102,10 @@ MIDDLEWARE_CLASSES = (
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-ROOT_URLCONF = 'login.urls'
+ROOT_URLCONF = 'tddapp.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
-WSGI_APPLICATION = 'login.wsgi.application'
+WSGI_APPLICATION = 'tddapp.wsgi.application'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
