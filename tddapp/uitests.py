@@ -4,7 +4,13 @@ from django_pyvows.context import DjangoContext, DjangoHTTPContext
 from selenium import webdriver
 
 @Vows.batch
-class TDDDjangoApp(DjangoContext):
+class TDDDjangoApp(DjangoHTTPContext):
+
+    def get_settings(self):
+        return "tddapp.settings"
+
+    def topic(self):
+        self.start_server()
 
     '''This function returns the BrowserTests class which implements
     all the test we want to test.  Pass in the webdriver type and port
@@ -14,11 +20,7 @@ class TDDDjangoApp(DjangoContext):
     def onBrowser(webdriver, port):
         class BrowserTests(DjangoHTTPContext):
         
-            def get_settings(self):
-                return "tddapp.settings"
-
             def topic(self):
-                self.start_server(port=port)
                 browser = webdriver()
                 browser.get(self.get_url("/"))
                 return browser
