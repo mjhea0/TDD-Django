@@ -1,0 +1,124 @@
+## TDD with Django and PyVows
+
+
+[PyVows](http://heynemann.github.io/pyvows/), is a port of the popular Vows BDD framework from Node.js.  Being from Node it is of course asyncronous.  Being asyncronous it can make test run faster.  It doesn't guarantee test run faster, but it can help, especially if your running GUI tests.  
+
+In this article I'm going to discuss using PyVows for TDD with Django.  The biggest motivation for me to use something like PyVows is to get my GUI Test to run faster.  But wait (I'm often asked) isn't TDD just about Unit Tests?  Well no, not actually.  To quote [Dan North](http://dannorth.net/introducing-bdd/):
+
+> TDD - as originally described - is also about the behavior of entire systems.  Kent Beck
+> specifically describes it as operating on multiple levels of abstraction, no just "down in the code"
+> ... you can describe different granularities of behavior from the entire applicaiton right 
+> down to individual small components, classes or functions. 
+
+So while much of the focus in TDD articles is on unit tests, TDD is about building test that describe the expected functionality of a system and writting code until those tests pass.  Unit Tests are one example, but so are integration, GUI and pretty much any other type of testing.
+
+With the rant out of the way, lets dig into some code.
+
+Start a new Django project (with [virtualenvwrapper](https://bitbucket.org/dhellmann/virtualenvwrapper), [django-pyVows](http://github.com/rafaelcaricio/django-pyvows), and [selenium](https://code.google.com/p/selenium/)):
+
+```shell
+$ mkvirtualenv TDD-Django --no-site-packages
+New python executable in TDD-Django/bin/python
+Installing setuptools............done.
+Installing pip...............done.
+$ workon TDD-Django 
+pip install pyVows django django-pyVows selenium lxml cssselect
+...snipped...
+$ django-admin.py startproject tddapp      
+```
+
+Now that we have a basic project setup lets create our first GUI (aka functional) test to focus our development efforts on our user story.  For this example we will use a typical login user story that says something to the effect of:
+
+>`As a` registered user<br>
+>`I want to` login into the application entering a userame and password<br>
+>`So that` I can be assured my data is safe.
+
+So to create our first GUI test with pyVows we might add the following to tddapp/uitests.py file. 
+
+```python
+from pyvows import Vows, expect
+
+from django_pyvows.context import DjangoHTTPContext
+from selenium import webdriver
+
+@Vows.batch
+class TDDDjangoApp(DjangoHTTPContext):
+
+    def get_settings(self):
+        return "tddapp.settings"
+
+    def topic(self):
+        self.start_server()
+        browser = webdriver.Firefox()
+        browser.get(self.get_url("/"))
+        return browser
+
+    def should_prompt_the_user_with_a_login_page(self, topic):
+        expect(topic.title).to_include('Login')
+```
+
+There are several things going on here, I'll explain the basics but for a detailed explanation of pyVows check out the [github page](http://heynemann.github.io/pyvows/).
+
+The start of the test imports all the neccessary libraries including pyvows, django_pyvows and selenium.
+
+```python
+from pyvows import Vows, expect
+
+from django_pyvows.context import DjangoHTTPContext
+from selenium import webdriver
+```
+
+The next line creates what in pyVows is refered to as a Test batch.  A Test batch is pyVows is identified by the @Vows.batch decorator and is synonomous with `unittest.TestCase` in Python standard library's unittest module.
+
+Test batches are _contexts_ which describe different componenets and states you want to test.  Generally a Test Batch will inherit from `Vows.Context` but in our case we are inheriting from `DjangoHTTPContext` as that class provides all the helper functionality baked into djago_pyvows.  In addition to inheriting from `DjangoHTTPContext` you need to overwrite the function get_settings and return the path to your settings.py file you want to use to run your tests.
+
+```python
+@Vows.batch
+class TDDDjangoApp(DjangoHTTPContext):
+
+	def get_settings(self):
+        	return "tddapp.settings"
+
+``` 
+
+Each Context should contain a single topic which is what you are testing and a number of vows which perform the tests against the topic. For our topic we start the django server using the `start_server()` helper function, fire up Selenium and point selenium to the root of our django application.  _Note: self.get_url("/") translates the relative url to the absolute url, that we need to access the site_  Then, since this is a functional test our topic return the selenium webdriver so we can execute our tests.
+
+Next our first vow or test just checks to see if the title of the page includes 'Login'
+
+```python
+def topic(self):
+        self.start_server()
+        browser = webdriver.Firefox()
+        browser.get(self.get_url("/"))
+        return browser
+
+    def should_prompt_the_user_with_a_login_page(self, topic):
+        expect(topic.title).to_include('Login')
+```
+
+Running the test at this point should fail, because the default page in Django has a title of "Welcome to Django".  But it will verify at least that our basic setup is correct and we can go ahead and start coding something.  The output of running the test looks like this:
+
+```shell
+$ pyVows -vvv uitests.py 
+
+============
+Vows Results
+============
+
+
+    Tdd django app
+    ✗ should prompt the user with a login page
+        Expected topic(u'Welcome to Django') to include 'Login'
+        
+		...snipping Traceback to save space...
+
+  ✗ OK » 0 honored • 1 broken (2.489381s)
+```
+
+Pay attention to the naming of the tests in the report.  The outermost indented line is the Context (TDDDjangoApp), with each vow / test in that context listed and indented underneath.  This makes reporting and finding defects really easy as it reads like requirements.
+
+
+
+
+
+
