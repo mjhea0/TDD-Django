@@ -33,5 +33,5 @@ class TDDDjangoApp(DjangoContext):
             return browser
 
         def should_prompt_the_user_with_a_login_page(self, topic):
-            expect(topic.title).to_include('Django')
+            expect(topic.title).to_include('Login')
 
