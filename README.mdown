@@ -1,7 +1,19 @@
 ## Asyncronous Testing with Django and PyVows
 
 
-[PyVows](http://heynemann.github.io/pyvows/), is a port of the popular Vows BDD framework from Node.js.  Being from Node it is of course asyncronous. Which means it can help to make your tests run faster, especially if you're running GUI tests. For this article I will focus on using PyVows and selenium to run GUI Tests against Django, but stay tuned for my next article where I will discuss unit testing against Django with PyVows. 
+[PyVows](http://heynemann.github.io/pyvows/), is a port of the popular Vows BDD framework from Node.js.  Being from Node it is of course asyncronous. Which means it can help to make your tests run faster, especially if you're running GUI tests. For this article I will focus on using PyVows and selenium to run GUI Tests against Django, but stay tuned for my next article where I will discuss unit testing against Django with PyVows.
+
+Because PyVows is listed as a BDD framework someone is bound to asks why I'm using it and talking about TDD.  Well the reason is because they are basically two sides of the same coin.  BDD talks about describing behaviors and writting code so those behaviors produce the desired results, and TDD says more or less the same thing but talks about tests instead of behaviors.  So for this article I'm going to talk about writting GUI Tests with pyVows as part of your normal TDD (or BDD if you prefer) practice.  But wait (I'm often asked) isn't TDD just about Unit Tests?  Well no, not actually.  To quote [Dan North](http://dannorth.net/introducing-bdd/):
+
+> TDD - as originally described - is also about the behavior of entire systems.  Kent Beck
+> specifically describes it as operating on multiple levels of abstraction, not just "down in the code"
+> ... you can describe different granularities of behavior from the entire applicaiton right 
+> down to individual small components, classes or functions. 
+
+So while much of the focus in TDD articles is on unit tests, TDD is about building test that describe the expected functionality of a system and writting code until those tests pass.  Unit Tests are one example, but so are integration, GUI and pretty much any other type of testing.  I think, although I can't prove it, that BDD came about because to many developers hear Test Driven Development and think about only unit testing, so by changing the name and calling the behaviors its easier to see the full picture, which is actually what Kent Beck originially intended when we coined the terms TDD.
+
+With the rant out of the way, lets dig into some code.
+
 
 ### Basic Setup
 
