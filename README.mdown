@@ -10,7 +10,7 @@ Lets work through a set of examples.  Start a new Django project (with [virtuale
 ```shell
 $ mkvirtualenv TDD-Django --no-site-packages
 $ workon TDD-Django 
-pip install pyVows django django-pyVows selenium lxml cssselect
+$ pip install pyVows django django-pyVows selenium lxml cssselect
 $ django-admin.py startproject tddapp      
 ```
 This is really all we need to explore GUI Testing Django apps with PyVows.
