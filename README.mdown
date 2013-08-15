@@ -115,10 +115,99 @@ Vows Results
   ✗ OK » 0 honored • 1 broken (2.489381s)
 ```
 
-Pay attention to the naming of the tests in the report.  The outermost indented line is the Context (TDDDjangoApp), with each vow / test in that context listed and indented underneath.  This makes reporting and finding defects really easy as it reads like requirements.
+Pay attention to the naming of the tests in the report.  The outermost indented line is the Context (TDDDjangoApp), with each vow / test in that context listed and indented underneath.  This makes reporting and finding defects really easy as it reads like requirements.  Consider the following report:
+
+```shell
+$ pyVows -vvv uitests.py 
+
+============
+Vows Results
+============
 
 
+    Tdd django app
+	on Chrome
+    	   ✗ should prompt the user with a login page
+        on Firefox
+    	   ✗ should prompt the user with a login page
+ 
+		...snipping Traceback to save space...
 
+  ✗ OK » 0 honored • 2 broken (3.119354s)
+```
+
+Asyncronous Parallell testing on multiple browsers!  Let's have a look at the the test code:
+
+```python
+@Vows.batch
+class TDDDjangoApp(DjangoContext):
+
+    
+    class OnFirefox(DjangoHTTPContext):
+        
+        def get_settings(self):
+            return "tddapp.settings"
+
+        def topic(self):
+            self.start_server(port=8888)
+            browser = webdriver.Firefox()
+            browser.get(self.get_url("/"))
+            return browser
+
+        def should_prompt_the_user_with_a_login_page(self, topic):
+            expect(topic.title).to_include('Login')
+    
+    class OnChrome(DjangoHTTPContext):
+        
+        def get_settings(self):
+            return "tddapp.settings"
+
+        def topic(self):
+            self.start_server(port=8887)
+            browser = webdriver.Chrome()
+            browser.get(self.get_url("/"))
+            return browser
+
+        def should_prompt_the_user_with_a_login_page(self, topic):
+            expect(topic.title).to_include('Login')
+```
+
+In pyVows sibling Context are executed in parallel and nested context are executed sequentially.  Which means TDDDjangoApp would be exectued first, then OnFirefox and OnChrome would be executed in parallel.  We can however remove alot of the duplicate code, by creating a standard set of tests and running those tests against multiple contexts.
+
+```python
+@Vows.batch
+class TDDDjangoApp(DjangoContext):
+
+    def onBrowser(webdriver, port):
+        class BrowserTests(DjangoHTTPContext):
+        
+            def get_settings(self):
+                return "tddapp.settings"
+
+            def topic(self):
+                self.start_server(port=port)
+                browser = webdriver()
+                browser.get(self.get_url("/"))
+                return browser
+
+            def should_prompt_the_user_with_a_login_page(self, topic):
+                expect(topic.title).to_include('Django')
+
+        return BrowserTests
+
+    class OnChrome(onBrowser(webdriver.Chrome, 8887)):
+        pass
+    
+    class OnFirefox(onBrowser(webdriver.Firefox, 8888)):
+        pass
+
+    class OnPhantonJS(onBrowser(webdriver.PhantomJS, 8886)):
+        pass
+```
+
+By using the onBrowser function to create a context bassed upon the data passed in we can write all of our tests once (in the BrowserTests class) and create as many context as we need to execute against.
+
+The estute reader my wonder why however we are calling start_server for every new context.  We actually don't have to do this.
 
 
 
