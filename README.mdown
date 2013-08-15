@@ -248,6 +248,7 @@ class TDDDjangoApp(DjangoHTTPContext):
     class OnPhantonJS(onBrowser(webdriver.PhantomJS)):
         pass
 ```
+
 Notice how the TDDDjangoApp context now calls `start_server()` from it's topic
 function and we no longer need to pass in a port to our onBrowser context
 creation function.  In such a way we now only instantiate one version of server
@@ -258,5 +259,9 @@ run against a different environment.
 To deal with the performance issues it would be nice to be able to pass a
 number of threads to the start_server function like `start_server(threads=4)`.
 To that end I have submitted a patch <<insert link>> to the project.  In the
-meantime we can do some monkey patching to get it to work as such:
+meantime we can manually manage the threads to get it to work as such:
+
+```python
+
+```
 
