@@ -3,6 +3,21 @@ from pyvows import Vows, expect
 from django_pyvows.context import DjangoContext, DjangoHTTPContext
 from selenium import webdriver
 
+def onBrowser(webdriver):
+    class BrowserTests(DjangoHTTPContext):
+    
+        def topic(self):
+            webdriver.get(self.get_url("/"))
+            return webdriver
+        
+        def teardown(self):
+            webdriver.quit()
+
+        def should_prompt_the_user_with_a_login_page(self, topic):
+            expect(topic.title).to_include('Django')
+
+    return BrowserTests
+
 @Vows.batch
 class TDDDjangoApp(DjangoHTTPContext):
 
@@ -11,31 +26,19 @@ class TDDDjangoApp(DjangoHTTPContext):
 
     def topic(self):
         self.start_server()
+        #manual add some more threads to the CherryPy server
+        self.server.thr.server.requests.grow(3)
+    
+    def teardown(self):
+        #clean up the threads so we can exit cleanly
+        self.server.thr.server.requests.stop(timeout=1)
 
-    '''This function returns the BrowserTests class which implements
-    all the test we want to test.  Pass in the webdriver type and port
-    for the django server to run on to setup the context of the tests
-    so you can run them against different browsers
-    '''
-    def onBrowser(webdriver, port):
-        class BrowserTests(DjangoHTTPContext):
-        
-            def topic(self):
-                browser = webdriver()
-                browser.get(self.get_url("/"))
-                return browser
-
-            def should_prompt_the_user_with_a_login_page(self, topic):
-                expect(topic.title).to_include('Django')
-
-        return BrowserTests
-
-    class OnChrome(onBrowser(webdriver.Chrome, 8887)):
+    class OnChrome(onBrowser(webdriver.Chrome())):
         pass
     
-    class OnFirefox(onBrowser(webdriver.Firefox, 8888)):
+    class OnFirefox(onBrowser(webdriver.Firefox())):
         pass
 
-    class OnPhantonJS(onBrowser(webdriver.PhantomJS, 8886)):
+    class OnPhantonJS(onBrowser(webdriver.PhantomJS())):
         pass
         

@@ -175,25 +175,26 @@ class TDDDjangoApp(DjangoContext):
 In pyVows sibling Context are executed in parallel and nested context are executed sequentially.  Which means TDDDjangoApp would be exectued first, then OnFirefox and OnChrome would be executed in parallel.  We can however remove alot of the duplicate code, by creating a standard set of tests and running those tests against multiple contexts.
 
 ```python
+def onBrowser(webdriver, port):
+    class BrowserTests(DjangoHTTPContext):
+    
+        def get_settings(self):
+            return "tddapp.settings"
+
+        def topic(self):
+            self.start_server(port=port)
+            browser = webdriver()
+            browser.get(self.get_url("/"))
+            return browser
+
+        def should_prompt_the_user_with_a_login_page(self, topic):
+            expect(topic.title).to_include('Django')
+
+    return BrowserTests
+
 @Vows.batch
 class TDDDjangoApp(DjangoContext):
 
-    def onBrowser(webdriver, port):
-        class BrowserTests(DjangoHTTPContext):
-        
-            def get_settings(self):
-                return "tddapp.settings"
-
-            def topic(self):
-                self.start_server(port=port)
-                browser = webdriver()
-                browser.get(self.get_url("/"))
-                return browser
-
-            def should_prompt_the_user_with_a_login_page(self, topic):
-                expect(topic.title).to_include('Django')
-
-        return BrowserTests
 
     class OnChrome(onBrowser(webdriver.Chrome, 8887)):
         pass
@@ -207,7 +208,55 @@ class TDDDjangoApp(DjangoContext):
 
 By using the onBrowser function to create a context bassed upon the data passed in we can write all of our tests once (in the BrowserTests class) and create as many context as we need to execute against.
 
-The estute reader my wonder why however we are calling start_server for every new context.  We actually don't have to do this.
+The estute reader my wonder why however we are calling start_server for every new context.  We actually don't have to do this, but we are working around a limitation of django_pyvows.  Unfourtunatly the `DjangoHTTPContext.start_server()` function creates a single threaded, blocking `CherryPyWSGIServer` which, when running asyncronous ui tests is bad for buisness and performance. In fact for this this set of tests execution time increases from roughly 5 seconds (as written above) to roughly 21 seconds if we only crate one CherryPy server.  
 
+Ideally we would want to only create one server to test against and perhaps
+make the server multi-threaded so we don't have to incur the performance
+penantly.  So let's see if we can make that happen.  First off let's update the
+test code to use pyVows notion of context inheritence so we only have to create
+the server once.
 
+```python
+def onBrowser(webdriver):
+    class BrowserTests(DjangoHTTPContext):
+    
+        def topic(self):
+            browser = webdriver()
+            browser.get(self.get_url("/"))
+            return browser
+
+        def should_prompt_the_user_with_a_login_page(self, topic):
+            expect(topic.title).to_include('Django')
+
+    return BrowserTests
+
+@Vows.batch
+class TDDDjangoApp(DjangoHTTPContext):
+
+    def get_settings(self):
+        return "tddapp.settings"
+
+    def topic(self):
+        self.start_server()
+
+    class OnChrome(onBrowser(webdriver.Chrome)):
+        pass
+    
+    class OnFirefox(onBrowser(webdriver.Firefox)):
+        pass
+
+    class OnPhantonJS(onBrowser(webdriver.PhantomJS)):
+        pass
+```
+Notice how the TDDDjangoApp context now calls `start_server()` from it's topic
+function and we no longer need to pass in a port to our onBrowser context
+creation function.  In such a way we now only instantiate one version of server
+and run all tests against that.  This has the advantage of using less resources
+and it make the code more portable, if we want to perhaps reuse these tests to
+run against a different environment.
+
+To deal with the performance issues it would be nice to be able to pass a
+number of threads to the start_server function like `start_server(threads=4)`.
+To that end I have submitted a patch <<insert link>> to the project.  In the
+meantime we can do some monkey patching to get it to work as such:
 
