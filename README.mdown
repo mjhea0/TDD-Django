@@ -1,39 +1,21 @@
-## TDD with Django and PyVows
+## Asyncronous Testing with Django and PyVows
 
 
-[PyVows](http://heynemann.github.io/pyvows/), is a port of the popular Vows BDD framework from Node.js.  Being from Node it is of course asyncronous.  Being asyncronous it can make test run faster.  It doesn't guarantee test run faster, but it can help, especially if your running GUI tests.  
+[PyVows](http://heynemann.github.io/pyvows/), is a port of the popular Vows BDD framework from Node.js.  Being from Node it is of course asyncronous.  Being asyncronous it can make test run faster.  It doesn't guarantee test run faster, but it can help, especially if your running GUI tests. For this article I will focus on using PyVows and selenium to run GUI Tests against Django, but stay tuned for my next article where I will discuss unitTesting against Django with PyVows. 
 
-In this article I'm going to discuss using PyVows for TDD with Django.  The biggest motivation for me to use something like PyVows is to get my GUI Test to run faster.  But wait (I'm often asked) isn't TDD just about Unit Tests?  Well no, not actually.  To quote [Dan North](http://dannorth.net/introducing-bdd/):
+### Basic Setup
 
-> TDD - as originally described - is also about the behavior of entire systems.  Kent Beck
-> specifically describes it as operating on multiple levels of abstraction, no just "down in the code"
-> ... you can describe different granularities of behavior from the entire applicaiton right 
-> down to individual small components, classes or functions. 
-
-So while much of the focus in TDD articles is on unit tests, TDD is about building test that describe the expected functionality of a system and writting code until those tests pass.  Unit Tests are one example, but so are integration, GUI and pretty much any other type of testing.
-
-With the rant out of the way, lets dig into some code.
-
-Start a new Django project (with [virtualenvwrapper](https://bitbucket.org/dhellmann/virtualenvwrapper), [django-pyVows](http://github.com/rafaelcaricio/django-pyvows), and [selenium](https://code.google.com/p/selenium/)):
+Lets work through a set of examples.  Start a new Django project (with [virtualenvwrapper](https://bitbucket.org/dhellmann/virtualenvwrapper), [django-pyVows](http://github.com/rafaelcaricio/django-pyvows), and [selenium](https://code.google.com/p/selenium/)):
 
 ```shell
 $ mkvirtualenv TDD-Django --no-site-packages
-New python executable in TDD-Django/bin/python
-Installing setuptools............done.
-Installing pip...............done.
 $ workon TDD-Django 
 pip install pyVows django django-pyVows selenium lxml cssselect
-...snipped...
 $ django-admin.py startproject tddapp      
 ```
-
-Now that we have a basic project setup lets create our first GUI (aka functional) test to focus our development efforts on our user story.  For this example we will use a typical login user story that says something to the effect of:
-
->`As a` registered user<br>
->`I want to` login into the application entering a userame and password<br>
->`So that` I can be assured my data is safe.
-
-So to create our first GUI test with pyVows we might add the following to tddapp/uitests.py file. 
+This is really all we need to explore GUI Testing Django apps with PyVows.
+ 
+Lets create our first GUI test with pyVows adding the following to tddapp/uitests.py file. 
 
 ```python
 from pyvows import Vows, expect
@@ -54,10 +36,12 @@ class TDDDjangoApp(DjangoHTTPContext):
         return browser
 
     def should_prompt_the_user_with_a_login_page(self, topic):
-        expect(topic.title).to_include('Login')
+        expect(topic.title).to_include('Django')
 ```
 
-There are several things going on here, I'll explain the basics but for a detailed explanation of pyVows check out the [github page](http://heynemann.github.io/pyvows/).
+### Whats really going on?
+
+There are several things going on here, I'll explain the basics and if you need more explanation of pyVows check out the [github page](http://heynemann.github.io/pyvows/).
 
 The start of the test imports all the neccessary libraries including pyvows, django_pyvows and selenium.
 
@@ -81,9 +65,9 @@ class TDDDjangoApp(DjangoHTTPContext):
 
 ``` 
 
-Each Context should contain a single topic which is what you are testing and a number of vows which perform the tests against the topic. For our topic we start the django server using the `start_server()` helper function, fire up Selenium and point selenium to the root of our django application.  _Note: self.get_url("/") translates the relative url to the absolute url, that we need to access the site_  Then, since this is a functional test our topic return the selenium webdriver so we can execute our tests.
+Each Context should contain a single topic which is what you are testing and a number of vows which perform the tests against the topic. For our topic we start the django server using the `start_server()` helper function, fire up Selenium and point selenium to the root of our django application.  _Note: self.get_url("/") translates the relative url to the absolute url, that we need to access the site_  Then, since this is a GUI test our topic return the selenium webdriver so we can execute our tests.
 
-Next our first vow or test just checks to see if the title of the page includes 'Login'
+Next our first vow or test just checks to see if the title of the page includes 'Django'
 
 ```python
 def topic(self):
@@ -92,11 +76,11 @@ def topic(self):
         browser.get(self.get_url("/"))
         return browser
 
-    def should_prompt_the_user_with_a_login_page(self, topic):
-        expect(topic.title).to_include('Login')
+    def should_prompt_the_user_with_a_django_page(self, topic):
+        expect(topic.title).to_include('Django')
 ```
 
-Running the test at this point should fail, because the default page in Django has a title of "Welcome to Django".  But it will verify at least that our basic setup is correct and we can go ahead and start coding something.  The output of running the test looks like this:
+Running the test at this point should pass, because the default page in Django has a title of "Welcome to Django".  But it will verify at least that our basic setup is correct and we can go ahead and start coding something.  The output of running the test looks like this:
 
 ```shell
 $ pyVows -vvv uitests.py 
@@ -107,8 +91,24 @@ Vows Results
 
 
     Tdd django app
-    ✗ should prompt the user with a login page
-        Expected topic(u'Welcome to Django') to include 'Login'
+    ✓  should prompt the user with a django page
+
+  ✓ OK » 1 honored • 0 broken (2.489381s)
+```
+
+And a failed test my look like this:
+
+```shell
+$ pyVows -vvv uitests.py 
+
+============
+Vows Results
+============
+
+
+    Tdd django app
+    ✗ should prompt the user with a django page
+        Expected topic(u'Page Not Found') to include 'Login'
         
 		...snipping Traceback to save space...
 
@@ -127,22 +127,27 @@ Vows Results
 
     Tdd django app
 	on Chrome
-    	   ✗ should prompt the user with a login page
-        on Firefox
-    	   ✗ should prompt the user with a login page
+    	   ✓ should prompt the user with a django page
+    on Firefox
+    	   ✗ should prompt the user with a django page
  
 		...snipping Traceback to save space...
 
-  ✗ OK » 0 honored • 2 broken (3.119354s)
+  ✗ OK » 1 honored • 1 broken (3.119354s)
 ```
 
-Asyncronous Parallell testing on multiple browsers!  Let's have a look at the the test code:
+In the above ficticious example we can see that our setup is working for
+Chrome and not Firefox.  Thus by using intuitive naming of the tests pyVows
+makes a simple yet highly effective report for pinpointing issues.
+
+### Lets Run Things in Parallel
+
+In addition we are now approaching Asyncronous Parallell testing on multiple browsers!  Let's have a look at the the test code that would have produced that report:
 
 ```python
 @Vows.batch
 class TDDDjangoApp(DjangoContext):
 
-    
     class OnFirefox(DjangoHTTPContext):
         
         def get_settings(self):
@@ -154,8 +159,8 @@ class TDDDjangoApp(DjangoContext):
             browser.get(self.get_url("/"))
             return browser
 
-        def should_prompt_the_user_with_a_login_page(self, topic):
-            expect(topic.title).to_include('Login')
+        def should_prompt_the_user_with_a_django_page(self, topic):
+            expect(topic.title).to_include('string not in the title')
     
     class OnChrome(DjangoHTTPContext):
         
@@ -168,11 +173,11 @@ class TDDDjangoApp(DjangoContext):
             browser.get(self.get_url("/"))
             return browser
 
-        def should_prompt_the_user_with_a_login_page(self, topic):
-            expect(topic.title).to_include('Login')
+        def should_prompt_the_user_with_a_django_page(self, topic):
+            expect(topic.title).to_include('Django')
 ```
 
-In pyVows sibling Context are executed in parallel and nested context are executed sequentially.  Which means TDDDjangoApp would be exectued first, then OnFirefox and OnChrome would be executed in parallel.  We can however remove alot of the duplicate code, by creating a standard set of tests and running those tests against multiple contexts.
+In pyVows sibling Context are executed in parallel and nested context are executed sequentially.  Which means TDDDjangoApp would be exectued first, then it's two nested context OnFirefox and OnChrome would be executed in parallel (because they are siblings of each other).  We can however remove alot of the duplicate code, by creating a standard set of tests and running those tests against multiple contexts.
 
 ```python
 def onBrowser(webdriver, port):
@@ -187,14 +192,13 @@ def onBrowser(webdriver, port):
             browser.get(self.get_url("/"))
             return browser
 
-        def should_prompt_the_user_with_a_login_page(self, topic):
+        def should_prompt_the_user_with_a_django_page(self, topic):
             expect(topic.title).to_include('Django')
 
     return BrowserTests
 
 @Vows.batch
 class TDDDjangoApp(DjangoContext):
-
 
     class OnChrome(onBrowser(webdriver.Chrome, 8887)):
         pass
@@ -206,13 +210,71 @@ class TDDDjangoApp(DjangoContext):
         pass
 ```
 
-By using the onBrowser function to create a context bassed upon the data passed in we can write all of our tests once (in the BrowserTests class) and create as many context as we need to execute against.
+Functional programming to the rescue! (well kind of...)  One of the beauties of python is your aren't tied to a particular programming paradigm.  So we can use a variety of solutions, in this case we want to dynamically create a testing context for each browser and port we want to run tests against.  To do this we can write all of our tests once (in the BrowserTests class, which is returned by the OnBrowser function).  The nice thing about this technique is that the `topic()` function in the BrowserTests class returns whatever webdriver (aka browser) that is passed into the onBrowser function.
 
-The estute reader my wonder why however we are calling start_server for every new context.  We actually don't have to do this, but we are working around a limitation of django_pyvows.  Unfourtunatly the `DjangoHTTPContext.start_server()` function creates a single threaded, blocking `CherryPyWSGIServer` which, when running asyncronous ui tests is bad for buisness and performance. In fact for this this set of tests execution time increases from roughly 5 seconds (as written above) to roughly 21 seconds if we only crate one CherryPy server.  
+From here our test batch (denoted by `@Vows.batch`) is simply describing what will be ran /
+reported. The output of which would look like this:
+
+```shell
+ ============
+ Vows Results
+ ============
+
+
+    Tdd django app
+      On phanton js
+      ✓ should prompt the user with a django page
+      On chrome
+      ✓ should prompt the user with a django page
+      On firefox
+      ✓ should prompt the user with a django page
+  ✓ OK » 3 honored • 0 broken (4.068020s)
+```
+
+With this setup each test we add to the BrowserTests class will be run against
+each browser we specify.  For example if we added the following tests to the
+BrowserTests class...
+
+```python
+    def heading_should_tell_the_user_it_worked(self,topic):
+            heading_text = topic.find_element_by_css_selector("#summary h1").text
+            expect(heading_text).to_equal("It worked!")
+
+    def should_display_debug_message(self,topic):
+            explain_text = topic.find_element_by_id("explanation").text
+            expect(explain_text).to_include("DEBUG = True")
+```
+
+...then the report would show:
+
+```shell
+ ============
+ Vows Results
+ ============
+
+
+    Tdd django app
+      On firefox
+      ✓ should prompt the user with a django page
+      ✓ heading should tell the user it worked
+      ✓ should display debug message
+      On chrome
+      ✓ heading should tell the user it worked
+      ✓ should prompt the user with a django page
+      ✓ should display debug message
+      On phanton js
+      ✓ should prompt the user with a django page
+      ✓ should display debug message
+      ✓ heading should tell the user it worked
+  ✓ OK » 9 honored • 0 broken (4.238522s)
+```
+### An Important Issue to Consider
+
+You may wonder why, however, we are calling start_server for every new context.  We actually don't have to do this, but we are working around a limitation of django_pyvows.  Unfourtunatly the `DjangoHTTPContext.start_server()` function creates a single threaded, blocking `CherryPyWSGIServer` which, when running asyncronous ui tests is bad for buisness and performance. In fact for this this set of tests execution time increases from roughly 5 seconds (as written above) to roughly 21 seconds if we only create one CherryPy server.  
 
 Ideally we would want to only create one server to test against and perhaps
 make the server multi-threaded so we don't have to incur the performance
-penantly.  So let's see if we can make that happen.  First off let's update the
+penalty.  So let's see if we can make that happen.  First off let's update the
 test code to use pyVows notion of context inheritence so we only have to create
 the server once.
 
@@ -251,17 +313,92 @@ class TDDDjangoApp(DjangoHTTPContext):
 
 Notice how the TDDDjangoApp context now calls `start_server()` from it's topic
 function and we no longer need to pass in a port to our onBrowser context
-creation function.  In such a way we now only instantiate one version of server
-and run all tests against that.  This has the advantage of using less resources
-and it make the code more portable, if we want to perhaps reuse these tests to
+creation function.  In such a way we now only instantiate one version of the
+CHerryPy server and run all tests against that.  This has the advantage of using less resources
+and it make the code easier to update / port, if we want to perhaps reuse these tests to
 run against a different environment.
 
 To deal with the performance issues it would be nice to be able to pass a
 number of threads to the start_server function like `start_server(threads=4)`.
 To that end I have submitted a patch <<insert link>> to the project.  In the
-meantime we can manually manage the threads to get it to work as such:
+meantime we can manually manage the threads to get tests running faster:
 
 ```python
+def onBrowser(webdriver):
+    class BrowserTests(DjangoHTTPContext):
+    
+        def topic(self):
+            webdriver.get(self.get_url("/"))
+            return webdriver
+        
+        def teardown(self):
+            webdriver.quit()
 
+        def should_prompt_the_user_with_a_login_page(self, topic):
+            expect(topic.title).to_include('Django')
+
+    return BrowserTests
+
+@Vows.batch
+class TDDDjangoApp(DjangoHTTPContext):
+
+    def get_settings(self):
+        return "tddapp.settings"
+
+    def topic(self):
+        self.start_server()
+        #manual add some more threads to the CherryPy server
+        self.server.thr.server.requests.grow(3)
+    
+    def teardown(self):
+        #clean up the threads so we can exit cleanly
+        self.server.thr.server.requests.stop(timeout=1)
+
+    class OnChrome(onBrowser(webdriver.Chrome())):
+        pass
+    
+    class OnFirefox(onBrowser(webdriver.Firefox())):
+        pass
+
+    class OnPhantonJS(onBrowser(webdriver.PhantomJS())):
+        pass
 ```
+
+We have done three things here.  One in the `topic()` function we add three more
+threads to CherryPy's thread pool like.
+
+```python
+  def topic(self):
+        self.start_server()
+        #manual add some more threads to the CherryPy server
+        self.server.thr.server.requests.grow(3)
+```
+
+Then of course we need to make sure the threads are cleaned up or the test run
+will never stop. 
+
+```python
+ def teardown(self):
+        #clean up the threads so we can exit cleanly
+        self.server.thr.server.requests.stop(timeout=1)
+```
+
+As a finishing touch, and something we should have done earlier we will make
+sure that webdriver cleans up after it's self by adding a teardown function to
+our BrowserTest class:
+
+```python
+  def teardown(self):
+            webdriver.quit()
+```
+
+### Wrapping Up
+
+Node isn't the only game in town that can do things asyncronously.  And with
+the port of Vows.js to pyVows and a little bit of ingenuity we can get multiple
+browser, parallel testing for Django up an running with very little effort.  We
+could take this a step further and link up to something like BrowserMob or
+SauceLabs to test against a huge number of browsers and really have a good
+time.  Plus with simple easy to understand reporting and a very clean syntax
+your GUI testing can become (relatively) painless and FAST!
 

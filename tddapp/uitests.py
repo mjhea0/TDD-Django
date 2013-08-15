@@ -13,8 +13,16 @@ def onBrowser(webdriver):
         def teardown(self):
             webdriver.quit()
 
-        def should_prompt_the_user_with_a_login_page(self, topic):
+        def should_prompt_the_user_with_a_django_page(self, topic):
             expect(topic.title).to_include('Django')
+        
+        def heading_should_tell_the_user_it_worked(self,topic):
+            heading_text = topic.find_element_by_css_selector("#summary h1").text
+            expect(heading_text).to_equal("It worked!")
+
+        def should_display_debug_message(self,topic):
+            explain_text = topic.find_element_by_id("explanation").text
+            expect(explain_text).to_include("DEBUG = True")
 
     return BrowserTests
 
