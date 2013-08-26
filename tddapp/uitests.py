@@ -25,7 +25,7 @@ def onBrowser(webdriver):
             expect(explain_text).to_include("DEBUG = True")
 
     return BrowserTests
-
+    
 @Vows.batch
 class TDDDjangoApp(DjangoHTTPContext):
 
