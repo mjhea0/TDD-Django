@@ -1,4 +1,4 @@
 **Tutorial:**
 
-[Asyncronous Testing with Django and PyVows](http://www.realpython.com/blog/python/asynchronous-testing-with-django-and-pyvows/)
-
+1. Part 1: [Asyncronous Testing with Django and PyVows](http://www.realpython.com/blog/python/asynchronous-testing-with-django-and-pyvows/)
+2. Part 2: [Unit Testing with pyVows and Django](http://www.realpython.com/blog/python/unit-testing-with-pyvows-and-django)
