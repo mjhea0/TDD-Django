@@ -2,7 +2,7 @@
 
 1. Part 1: [Asynchronous Testing with Django and PyVows](http://www.realpython.com/blog/python/asynchronous-testing-with-django-and-pyvows/)
 2. Part 2: [Unit Testing with pyVows and Django](http://www.realpython.com/blog/python/unit-testing-with-pyvows-and-django)
-3. Part 3: [Integration testing with pyVows and Django](http://www.realpython.com/python/integration-testing-with-pyvows-and-django/)
+3. Part 3: [Integration testing with pyVows and Django](http://www.realpython.com/blog/python/integration-testing-with-pyvows-and-django/)
 
 
 Any suggestions for future posts? Contact me. Submit an issue. 
